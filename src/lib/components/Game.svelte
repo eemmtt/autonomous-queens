@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Application, Assets, Sprite, Texture } from "pixi.js";
-    import { exTexture, flagTexture, getPixiContext, setPixiContext } from "../pixi";
+    import { getPixiContext, setPixiContext } from "../pixi";
     import { onMount } from "svelte";
 	import { gridSize } from "$lib/solution";
 	import { Tile, type TileTextures } from "./Tile";
@@ -41,14 +41,6 @@
 
             // Append canvas to container
             container.appendChild(app.canvas);
-
-            Assets.load('flag').then((texture) =>{
-                flagTexture.set(texture);
-            });
-
-            Assets.load('ex').then((texture) =>{
-                exTexture.set(texture);
-            });
 
             const cellWidth = containerWidth / gridSize;
             const cellHeight = containerHeight / gridSize;
