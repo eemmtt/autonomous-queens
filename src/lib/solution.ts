@@ -27,5 +27,5 @@ function generateSolution(gridSize:number): number[][] {
     });
     return solution;
 }
-export const gridSize = 6;
+export const gridSize = 8;
 export const solution = generateSolution(gridSize);
