@@ -1,3 +1,4 @@
+import { regionMap } from "$lib/regions";
 import { gridSize } from "$lib/solution";
 import { Color, Container, Graphics, Rectangle, Sprite, Texture, type FederatedPointerEvent } from "pixi.js";
 
@@ -24,9 +25,9 @@ export class Tile{
     region: number;
     trigger: (event: FederatedPointerEvent) => void;
 
-    constructor(parent: Container, x: number, y: number, width: number, height: number, textures: TileTextures){
+    constructor(parent: Container, x: number, y: number, width: number, height: number, textures: TileTextures, region: number, isSolve: boolean){
 
-        this.region = 0;
+        this.region = region;
         this.state = 0;
 
         this.root = new Container();
@@ -38,9 +39,7 @@ export class Tile{
             .fill(0xffffff)
         ;
 
-        const cIndex = Math.floor(Math.random() * gridSize);
-        const colors = [0x54CC66, 0x54CC66,0x54CC66,0x54CC66,0x54CC66,0x54CC66,0x54CC66,0x54CC66 ];
-        this.bg.tint = new Color(colors[cIndex]);
+        this.bg.tint = new Color(regionMap[this.region].color);
 
         this.bgOutline = new Graphics()
             .rect(0,0, width, height)
@@ -52,7 +51,7 @@ export class Tile{
         this.flagUp.anchor.set(0,1);
         this.flagUp.scale.set(width/256);
         this.flagUp.position.set(0,height);
-        this.flagUp.visible = false;
+        this.flagUp.visible = isSolve;
 
         this.flagDwn = new Sprite(textures.flag.down);
         this.flagDwn.anchor.set(0,1);
@@ -65,7 +64,7 @@ export class Tile{
         this.flagBg.scale.set(width/256);
         this.flagBg.position.set(0,height);
         this.flagBg.blendMode = "soft-light";
-        this.flagBg.alpha = 0.5;
+        this.flagBg.alpha = 0.25;
         this.flagBg.visible = false;
 
         this.ex = new Sprite(textures.ex);
