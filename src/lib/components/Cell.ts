@@ -48,7 +48,6 @@ export class Cell{
     }
 
     update(){
-        console.log("update squak");
         const newState = (this.state + 1) % 3;
         if (newState == 0){
             //nothing
@@ -79,5 +78,29 @@ export class Cell{
             .fill(regionMap[this.region].color)
         ;
         parent.addChild(quad);
+    }
+
+    scratchLine(parent: Container, p0: Point, p1: Point, jitter: number, extension: number, color: number) {
+        //randomly extend the line
+        const r0 = Math.random();
+        const e0 = new Point(p0.x + (p0.x - p1.x) * 0.05 * r0, p0.y + (p0.y - p1.y) * 0.05 * r0);
+        const r1 = Math.random();
+        const e1 = new Point(p1.x + (p1.x - p0.x) * 0.05 * r1, p1.y + (p1.y - p0.y) * 0.05 * r1);
+
+        //randomly stroke in opposite direction
+        let pj;
+        if (Math.random() < 0.5){
+            pj = new Point(e0.x + (Math.random() - 0.5) * jitter, e0.y + (Math.random() - 0.5) * jitter);
+        } else {
+            pj = new Point(e1.x + (Math.random() - 0.5) * jitter, e1.y + (Math.random() - 0.5) * jitter);
+        }
+        const line = new Graphics()
+            .moveTo(e0.x, e0.y)
+            .lineTo(pj.x, pj.y)
+            .lineTo(e1.x, e1.y)
+            .closePath()
+            .fill(color)
+        ;
+        parent.addChild(line);
     }
 }

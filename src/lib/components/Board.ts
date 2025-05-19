@@ -1,5 +1,4 @@
 import { regionMap } from "$lib/regions";
-import { gridSize, regions } from "$lib/solution";
 import { Container, FederatedPointerEvent, Graphics, Point, Rectangle } from "pixi.js";
 import { Cell } from "./Cell";
 
@@ -11,7 +10,9 @@ export class Board{
     quadPts: Point[];
     cells: Cell[][];
 
-    constructor(parent: Container, containerWidth: number, containerHeight: number){
+    constructor(parent: Container, containerWidth: number, containerHeight: number, regions: number[][], gridSize: number){
+        const start = performance.now();
+
         this.root = new Container();
         this.root.hitArea = new Rectangle(0,0,containerWidth,containerHeight);
         this.root.eventMode = 'static';
@@ -75,6 +76,8 @@ export class Board{
         parent.addChild(this.root);
 
         this.root.on('pointerdown', (event) => this.onClick(event, this.quadPts, this.cells));
+        console.log("Board constructor in", performance.now() - start, "ms");
+
     }
 
     scratchLine(parent: Container, p0: Point, p1: Point, jitter: number, extension: number, color: number) {

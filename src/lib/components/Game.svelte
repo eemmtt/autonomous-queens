@@ -1,11 +1,9 @@
 <script lang="ts">
-    import { Application, Assets, Point, Sprite, Texture } from "pixi.js";
+    import { Application } from "pixi.js";
     import { getPixiContext, setPixiContext } from "../pixi";
     import { onMount } from "svelte";
-	import { gridSize, regions, solution } from "$lib/solution";
-	import { Tile, type TileTextures } from "./Tile";
-	import { assets } from "$app/paths";
 	import { Board } from "./Board";
+	import { getGridSize, getRegions } from "$lib/model";
 
     // Local state
     let container: HTMLDivElement;
@@ -19,6 +17,7 @@
 
         async function init() {
             if (!container) return;
+            const start = performance.now();
             
             const containerWidth = container.clientWidth;
             const containerHeight = container.clientHeight;
@@ -43,36 +42,13 @@
             // Append canvas to container
             container.appendChild(app.canvas);
 
+            const board = new Board(app.stage, containerWidth, containerHeight, $getRegions, $getGridSize);
 
-            /*
-            const flagUpTex = await Assets.load('/flag3_up.png');
-            const flagDwTex = await Assets.load('/flag3_down.png');
-            const flagBgTex = await Assets.load('/flag3_bg.png');
-            const exTex =  await Assets.load('/ex2.png');
-
-            const tileTextures: TileTextures = {
-                flag: {
-                    up: flagUpTex,
-                    down: flagDwTex,
-                    bg: flagBgTex
-                },
-                ex: exTex
-            }
-
-            const tiles: Tile[] = [];
-            for (let y = 0; y < gridSize; y++) {
-                for (let x = 0; x < gridSize; x++) {
-                    const isSolve = solution.solution[x][y] == 1? true: false;
-                    tiles.push(new Tile(app.stage, x * cellWidth, y * cellHeight, cellWidth, cellHeight, tileTextures, regions[x][y], isSolve));
-                }
-                
-            }
-            */
-
-            const board = new Board(app.stage, containerWidth, containerHeight);
             
             // Mark as ready
             context.ready.set(true);
+            console.log("pixiInit in", performance.now() - start, "ms");
+
         }
 
         init();

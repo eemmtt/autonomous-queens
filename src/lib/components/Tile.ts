@@ -1,5 +1,4 @@
 import { regionMap } from "$lib/regions";
-import { gridSize } from "$lib/solution";
 import { Color, Container, Graphics, Rectangle, Sprite, Texture, type FederatedPointerEvent } from "pixi.js";
 
 export interface TileTextures{
