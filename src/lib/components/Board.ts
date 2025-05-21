@@ -9,6 +9,8 @@ export class Board{
     fg: Container;
     quadPts: Point[];
     cells: Cell[][];
+    trigger: (event: FederatedPointerEvent) => void;
+
 
     constructor(parent: Container, containerWidth: number, containerHeight: number, regions: number[][], gridSize: number){
         const start = performance.now();
@@ -75,19 +77,23 @@ export class Board{
         this.root.addChild(this.bg, this.fg);
         parent.addChild(this.root);
 
-        this.root.on('pointerdown', (event) => this.onClick(event, this.quadPts, this.cells));
+        this.trigger = (event) => this.onClick(event, this.quadPts, this.cells);
+        this.root.on('pointerdown', this.trigger);
         console.log("Board constructor in", performance.now() - start, "ms");
 
     }
 
     scratchLine(parent: Container, p0: Point, p1: Point, jitter: number, extension: number, color: number) {
-        //randomly extend the line
-        const r0 = Math.random();
-        const e0 = new Point(p0.x + (p0.x - p1.x) * 0.05 * r0, p0.y + (p0.y - p1.y) * 0.05 * r0);
-        const r1 = Math.random();
-        const e1 = new Point(p1.x + (p1.x - p0.x) * 0.05 * r1, p1.y + (p1.y - p0.y) * 0.05 * r1);
+        //scratchline draws a thin triangle between two pts
 
-        //randomly stroke in opposite direction
+        //randomly extend the line (up to extension %)
+        const r0 = Math.random();
+        const e0 = new Point(p0.x + (p0.x - p1.x) * (extension * r0), p0.y + (p0.y - p1.y) * (extension * r0));
+        const r1 = Math.random();
+        const e1 = new Point(p1.x + (p1.x - p0.x) * (extension * r1), p1.y + (p1.y - p0.y) * (extension * r1));
+
+        // generate 3rd pt of triangle as random offset from either end-point of the line
+        // this gives the appearence of the line having a direction
         let pj;
         if (Math.random() < 0.5){
             pj = new Point(e0.x + (Math.random() - 0.5) * jitter, e0.y + (Math.random() - 0.5) * jitter);
