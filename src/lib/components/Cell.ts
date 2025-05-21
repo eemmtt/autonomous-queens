@@ -1,10 +1,11 @@
 import { regionMap } from "$lib/regions";
+import { lerp1d, lerp2d, perpVecNormalized, randomSign } from "$lib/utils";
 import { Container, Graphics, Point, Text } from "pixi.js";
 
 export class Cell{
     parent: Container;
     root: Container;
-    ex: Graphics;
+    ex: Container;
     p0: Point;
     p1: Point;
     p2: Point;
@@ -24,11 +25,11 @@ export class Cell{
 
         this.messyQuad(this.root, 4.5);
         
-        this.ex = new Graphics()
-            .circle(this.center.x, this.center.y, 5)
-            .fill(0xFF0000)
-        ;
-        this.ex.visible = false;
+        this.ex = new Container();
+        this.scratchLine(this.ex, lerp2d(this.p0, this.p2, 0.05), lerp2d(this.p2, this.p0, 0.05), 5, 0.1, 0x4f3032);
+        this.scratchLine(this.ex, lerp2d(this.p1, this.p3, 0.05), lerp2d(this.p3, this.p1, 0.05), 5, 0.1, 0x4f3032);
+
+        //this.ex.visible = true;
         this.root.addChild(this.ex);
         
         //visualize winding
@@ -64,6 +65,7 @@ export class Cell{
     }
 
     messyQuad(parent: Container, jitter: number) {
+        //jitter pt positions
         const p0j = new Point(this.p0.x + (Math.random() - 0.5) * jitter, this.p0.y + (Math.random() - 0.5) * jitter);
         const p1j = new Point(this.p1.x + (Math.random() - 0.5) * jitter, this.p1.y + (Math.random() - 0.5) * jitter);
         const p2j = new Point(this.p2.x + (Math.random() - 0.5) * jitter, this.p2.y + (Math.random() - 0.5) * jitter);
@@ -81,22 +83,33 @@ export class Cell{
     }
 
     scratchLine(parent: Container, p0: Point, p1: Point, jitter: number, extension: number, color: number) {
-        //randomly extend the line
-        const r0 = Math.random();
-        const e0 = new Point(p0.x + (p0.x - p1.x) * 0.05 * r0, p0.y + (p0.y - p1.y) * 0.05 * r0);
-        const r1 = Math.random();
-        const e1 = new Point(p1.x + (p1.x - p0.x) * 0.05 * r1, p1.y + (p1.y - p0.y) * 0.05 * r1);
+        //scratchline draws a thin triangle between two pts
 
-        //randomly stroke in opposite direction
-        let pj;
+        //randomly extend the line (up to extension %)
+        const r0 = Math.random();
+        const e0 = new Point(p0.x + (p0.x - p1.x) * (extension * r0), p0.y + (p0.y - p1.y) * (extension * r0));
+        const r1 = Math.random();
+        const e1 = new Point(p1.x + (p1.x - p0.x) * (extension * r1), p1.y + (p1.y - p0.y) * (extension * r1));
+
+        // generate 3rd pt of triangle as random offset from either end-point of the line
+        // this gives the appearence of the line having a direction
+        let pj0, pj1;
+        const rV = perpVecNormalized(p0, p1);
+        const rS = randomSign();
+        const rX = rV.x * lerp1d(0.2, 0.5, Math.random()) * rS;
+        const rY = rV.y * lerp1d(0.2, 0.5, Math.random()) * rS;
         if (Math.random() < 0.5){
-            pj = new Point(e0.x + (Math.random() - 0.5) * jitter, e0.y + (Math.random() - 0.5) * jitter);
+            pj0 = new Point(e0.x + rX * jitter, e0.y + rY * jitter);
+            pj1 = new Point(e1.x + rX * jitter/2, e1.y + rY * jitter/2);
         } else {
-            pj = new Point(e1.x + (Math.random() - 0.5) * jitter, e1.y + (Math.random() - 0.5) * jitter);
+            pj0 = new Point(e0.x + rX * jitter/2, e0.y + rY * jitter/2);
+            pj1 = new Point(e1.x + rX * jitter, e1.y + rY * jitter);
+
         }
         const line = new Graphics()
             .moveTo(e0.x, e0.y)
-            .lineTo(pj.x, pj.y)
+            .lineTo(pj0.x, pj0.y)
+            .lineTo(pj1.x, pj1.y)
             .lineTo(e1.x, e1.y)
             .closePath()
             .fill(color)
