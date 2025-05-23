@@ -6,7 +6,7 @@ import { Cell } from "./Cell";
 export class Board{
     root: Container;
     bg: Container;
-    fg: Container;
+    flags: Container;
     quadPts: Point[];
     cells: Cell[][];
     trigger: (event: FederatedPointerEvent) => void;
@@ -20,7 +20,7 @@ export class Board{
         this.root.eventMode = 'static';
 
         this.bg = new Container();
-        this.fg = new Container();
+        this.flags = new Container();
 
         const inset = 50;
         const rScale = 20;
@@ -37,7 +37,7 @@ export class Board{
         this.bg.addChild(grid);
 
         const gridPts: Point[][] = this.calcGrid(p0, p1, p2, p3, gridSize, 0.05);
-        this.cells = this.calcCells(gridPts, gridSize, regions, this.bg);
+        this.cells = this.calcCells(gridPts, gridSize, regions, this.bg, this.flags);
         
 
         //debugging gridpts
@@ -48,14 +48,15 @@ export class Board{
                     .circle(gridPts[y][x].x, gridPts[y][x].y, 3)
                     .fill(0xFF0000)
                 ;
-                this.fg.addChild(dot);
+                this.flags.addChild(dot);
             }
             
         }
         */
-
+        
         for (let i = 0; i < gridPts[0].length; i++) {
             //draw grid lines with random splits
+            
             if (Math.random() < 0.4){
                 this.scratchLine(this.bg, gridPts[0][i], gridPts[gridPts[0].length - 1][i], 5, 0.05, 0x4f3014);
             } else {
@@ -63,7 +64,7 @@ export class Board{
                 this.scratchLine(this.bg, gridPts[0][i], gridPts[split][i], 7, 0.025, 0x4f3014);
                 this.scratchLine(this.bg, gridPts[split][i], gridPts[gridPts[0].length - 1][i], 7, 0.025, 0x4f3014);
             }
-
+            
             if (Math.random() < 0.4){
                 this.scratchLine(this.bg, gridPts[0][i], gridPts[gridPts[0].length - 1][i], 5, 0.05, 0x4f3014);
             } else {
@@ -72,9 +73,10 @@ export class Board{
                 this.scratchLine(this.bg, gridPts[i][split], gridPts[i][gridPts[0].length - 1], 7, 0.025, 0x4f3014);
             }
         }
+        
 
 
-        this.root.addChild(this.bg, this.fg);
+        this.root.addChild(this.bg, this.flags);
         parent.addChild(this.root);
 
         this.trigger = (event) => this.onClick(event, this.quadPts, this.cells);
@@ -185,7 +187,7 @@ export class Board{
         return newPts;
     }
 
-    calcCells(pts: Point[][], gridSize: number, regions: number[][], parent: Container): Cell[][]{
+    calcCells(pts: Point[][], gridSize: number, regions: number[][], parent: Container, flagContainer: Container): Cell[][]{
         const cells: Cell[][] = [];
 
         //pts.length will always be gridSize + 1
@@ -198,7 +200,7 @@ export class Board{
                     pts[j+1][i+1], // right-down
                     pts[j][i+1]    // down
                 ];
-                newCells.push( new Cell(qPts, 0, regions[j][i], parent));
+                newCells.push( new Cell(qPts, 0, regions[j][i], parent, flagContainer, {x: j, y: i}));
             }
             cells.push(newCells);
         }
@@ -288,9 +290,10 @@ export class Board{
                 return;
             }
 
-            console.log("couldn't find the correct cell!")
+            //console.log("couldn't find the correct cell!")
 
         }
 
     }
+
 }

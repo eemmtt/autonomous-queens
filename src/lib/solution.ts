@@ -1,8 +1,5 @@
-interface Flag{
-    x: number,
-    y: number,
-    regionID: number
-}
+
+import { Flag } from "./Flag";
 
 export interface SolutionDescription{
     gridSize: number,
@@ -59,12 +56,8 @@ export function generateSolution(gridSize:number): SolutionDescription {
         const newArr = new Array(gridSize).fill(0);
         newArr[ele] = 1;
         solution.push(newArr);
-        flags.push({
-            x: i,
-            y: ele,
-            regionID: regionMap[i],
-        })
-        //console.log(newArr);
+        flags.push( new Flag(i, ele, regionMap[i]));
+        console.log(newArr);
     });
 
     console.log("generateSolution in", performance.now() - start, "ms");
@@ -86,7 +79,7 @@ export function generateRegions(desc: SolutionDescription): number[][] {
 
     // Place flags on the grid
     for (const flag of flags) {
-        grid[flag.x][flag.y] = flag.regionID;
+        grid[flag.x][flag.y] = flag.region;
     }
 
     // Create individual queues for each region
@@ -94,7 +87,7 @@ export function generateRegions(desc: SolutionDescription): number[][] {
 
     // Initialize each region's queue with its flag position
     for (const flag of flags) {
-        queues.set(flag.regionID, [[flag.x, flag.y]]);
+        queues.set(flag.region, [[flag.x, flag.y]]);
     }
 
     // Define directions with weighted preferences

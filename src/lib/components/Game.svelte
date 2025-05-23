@@ -3,7 +3,7 @@
     import { getPixiContext, setPixiContext } from "../pixi";
     import { onMount } from "svelte";
 	import { Board } from "./Board";
-	import { getGridSize, getRegions } from "$lib/model";
+	import { GameState, getGameState, getGridSize, getRegions } from "$lib/model";
 
     // Local state
     let container: HTMLDivElement;
@@ -65,6 +65,12 @@
 <div bind:this={container} class="game-container">
     {#if getPixiContext().ready}
         <slot />
+    {:else}
+        <p>Loading!</p>
+    {/if}
+    
+    {#if $getGameState == GameState.win}
+        Woohoo
     {/if}
 </div>
 

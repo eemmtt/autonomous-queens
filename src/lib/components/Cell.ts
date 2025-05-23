@@ -1,6 +1,8 @@
 import { regionMap } from "$lib/regions";
+import { Flag } from "$lib/Flag";
 import { lerp1d, lerp2d, messyTri, perpVecNormalized, randomSign, scratchLine } from "$lib/utils";
 import { Container, Graphics, Point, Text } from "pixi.js";
+import { game, GameState } from "$lib/model";
 
 export class Cell{
     parent: Container;
@@ -14,15 +16,17 @@ export class Cell{
     center: Point;
     state: number;
     region: number;
+    asFlag: Flag;
 
 
-    constructor(pts: Point[], state: number, region: number, parent: Container){
+    constructor(pts: Point[], state: number, region: number, parent: Container, flagContainer: Container, indices: {x: number, y: number}){
         [this.p0, this.p1, this.p2, this.p3] = pts;
         this.center = new Point((pts[0].x + pts[1].x + pts[2].x + pts[3].x)/4, (pts[0].y + pts[1].y + pts[2].y + pts[3].y)/4);
         this.state = state;
         this.region = region;
         this.parent = parent;
         this.root = new Container();
+        this.asFlag = new Flag(indices.x, indices.y, region);
 
         this.messyQuad(this.root, 4.5);
         
@@ -36,7 +40,7 @@ export class Cell{
         this.flag = new Container();
         //flag pole + penant
         //TODO: make height proportional to cell height
-        const flagEnd = new Point(this.center.x - 8, this.center.y - 35);
+        const flagEnd = new Point(this.center.x - 8, this.center.y - 40);
         const pendant0 = lerp2d(this.center, flagEnd, 0.9);
         const pendant2 = lerp2d(this.center, flagEnd, 0.5);
         const perpFlag = perpVecNormalized(this.center, flagEnd);
@@ -45,21 +49,21 @@ export class Cell{
         scratchLine(this.flag, this.center, flagEnd, 5, 0, 0x4f3032);
         scratchLine(this.flag, pendant0, pendant1, 5, 0, 0x4f3032);
         scratchLine(this.flag, pendant2, pendant1, 5, 0, 0x4f3032);
-        messyTri(this.flag, pendant0, pendant1, lerp2d(pendant2, pendant1, 0.05), 2, 0x101721);
+        messyTri(this.flag, pendant0, pendant1, lerp2d(pendant2, pendant1, 0.05), 1, 0x101721);
 
         //flag shadow
         const flagShadow = new Container();
         const shadowEnd = new Point(this.center.x + 25, this.center.y + 11);
-        const shad0 = lerp2d(this.center, shadowEnd, 0.9);
-        const shad2 = lerp2d(this.center, shadowEnd, 0.5);
-        const perpShad = perpVecNormalized(this.center, shadowEnd);
-        const shad1 = new Point(lerp1d(shad2.x, shad0.x, 0.6) + perpShad.x * -1 * 15, lerp1d(shad2.y, shad0.y, 0.4) + perpShad.y * -1 * 15);
+        //const shad0 = lerp2d(this.center, shadowEnd, 0.9);
+        //const shad2 = lerp2d(this.center, shadowEnd, 0.5);
+        //const perpShad = perpVecNormalized(this.center, shadowEnd);
+        //const shad1 = new Point(lerp1d(shad2.x, shad0.x, 0.6) + perpShad.x * -1 * 15, lerp1d(shad2.y, shad0.y, 0.6) + perpShad.y * -1 * 15);
         
 
-        scratchLine(flagShadow, this.center, shadowEnd, 5, 0, 0x334455);
-        scratchLine(flagShadow, shad0, shad1, 5, 0, 0x4f3032);
-        scratchLine(flagShadow, shad2, shad1, 5, 0, 0x4f3032);
-        messyTri(flagShadow, shad0, shad1, lerp2d(shad2, shad1, 0.05), 2, 0x101721);
+        scratchLine(flagShadow, this.center, shadowEnd, 5, 0, 0x4f3032);
+        //scratchLine(flagShadow, shad0, shad1, 5, 0, 0x4f3032);
+        //scratchLine(flagShadow, shad2, shad1, 5, 0, 0x4f3032);
+        //messyTri(flagShadow, shad0, shad1, lerp2d(shad2, shad1, 0.05), 2, 0x4f3032);
 
         flagShadow.blendMode = 'overlay';
         flagShadow.alpha = 0.4;
@@ -69,7 +73,7 @@ export class Cell{
 
         this.flag.visible = false;
 
-        this.root.addChild(this.flag);
+        flagContainer.addChild(this.flag);
 
 
 
@@ -95,6 +99,7 @@ export class Cell{
         if (newState == 0){
             //nothing
             this.flag.visible = false;
+            game.updateFlags(this.asFlag);
         }
         if (newState == 1){
             //ex
@@ -104,6 +109,7 @@ export class Cell{
             //flag
             this.ex.visible = false;
             this.flag.visible = true;
+            game.updateFlags(this.asFlag);
         }
         this.state = newState;
     }
