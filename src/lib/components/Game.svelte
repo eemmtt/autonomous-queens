@@ -110,12 +110,12 @@
 <style>
 
     .game-container {
-        width: 500px;
-        height: 500px;
+        width: 425px;
+        height: 425px;
     }
 
     .menu {
-        width: 400px;
+        width: 350px;
         height: 2.5em;
         display: grid;
         grid-template-columns: repeat(1fr, 5);
