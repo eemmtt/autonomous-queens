@@ -56,7 +56,7 @@ export function generateSolution(gridSize:number): SolutionDescription {
         const newArr = new Array(gridSize).fill(0);
         newArr[ele] = 1;
         solution.push(newArr);
-        flags.push( new Flag(i, ele, regionMap[i]));
+        flags.push( new Flag(ele, i, regionMap[i]));
         //console.log(newArr);
     });
 
@@ -79,7 +79,7 @@ export function generateRegions(desc: SolutionDescription): number[][] {
 
     // Place flags on the grid
     for (const flag of flags) {
-        grid[flag.x][flag.y] = flag.region;
+        grid[flag.y][flag.x] = flag.region;
     }
 
     // Create individual queues for each region
@@ -87,11 +87,11 @@ export function generateRegions(desc: SolutionDescription): number[][] {
 
     // Initialize each region's queue with its flag position
     for (const flag of flags) {
-        queues.set(flag.region, [[flag.x, flag.y]]);
+        queues.set(flag.region, [[flag.y, flag.x]]);
     }
 
     // Define directions with weighted preferences
-    const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]]; // up, right, down, left
+    const directions = [[-1, 0], [0, 1], [1, 0], [0, -1]]; // up, right, down, left
 
     // Continue until all regions can't expand anymore
     let expansionHappened = true;
@@ -109,7 +109,7 @@ export function generateRegions(desc: SolutionDescription): number[][] {
         // Take a random cell from the front portion of the queue to add some unpredictability
         const frontPortion = Math.min(queue.length, 3);
         const randomIndex = Math.floor(Math.random() * frontPortion);
-        const [x, y] = queue.splice(randomIndex, 1)[0];
+        const [y, x] = queue.splice(randomIndex, 1)[0];
         
         // Shuffle directions to add randomness
         const shuffledDirections = [...directions].sort(() => Math.random() - 0.5);
@@ -118,7 +118,7 @@ export function generateRegions(desc: SolutionDescription): number[][] {
         const maxExpansions = Math.random() > 0.6 ? 1 : 2; // 60% chance to only expand in one direction
         let expansionCount = 0;
         
-        for (const [dx, dy] of shuffledDirections) {
+        for (const [dy, dx] of shuffledDirections) {
             if (expansionCount >= maxExpansions) break;
             
             const newX = x + dx;
@@ -128,18 +128,18 @@ export function generateRegions(desc: SolutionDescription): number[][] {
             if (
             newX >= 0 && newX < gridSize &&
             newY >= 0 && newY < gridSize &&
-            grid[newX][newY] === -1
+            grid[newY][newX] === -1
             ) {
             // Add some randomness - sometimes skip expanding even if possible
             if (Math.random() > 0.2) { // 80% chance to expand
                 // Assign this cell to the current region
-                grid[newX][newY] = regionID;
+                grid[newY][newX] = regionID;
                 expansionCount++;
                 expansionHappened = true;
                 
                 // Only add to queue if it's not creating too wide a region
                 if (Math.random() > 0.3) { // 70% chance to add to queue
-                queue.push([newX, newY]);
+                queue.push([newY, newX]);
                 }
             }
             }
@@ -154,25 +154,25 @@ export function generateRegions(desc: SolutionDescription): number[][] {
     // This is a fallback to ensure all cells are assigned
     for (let y = 0; y < gridSize; y++) {
         for (let x = 0; x < gridSize; x++) {
-        if (grid[x][y] === -1) {
+        if (grid[y][x] === -1) {
             // Find the nearest assigned cell's region
             let nearestRegion = -1;
             let minDistance = Infinity;
             
             for (let checkY = 0; checkY < gridSize; checkY++) {
             for (let checkX = 0; checkX < gridSize; checkX++) {
-                if (grid[checkX][checkY] !== -1) {
+                if (grid[checkY][checkX] !== -1) {
                 const distance = Math.abs(x - checkX) + Math.abs(y - checkY);
                 if (distance < minDistance) {
                     minDistance = distance;
-                    nearestRegion = grid[checkX][checkY];
+                    nearestRegion = grid[checkY][checkX];
                 }
                 }
             }
             }
             
             if (nearestRegion !== -1) {
-            grid[x][y] = nearestRegion;
+            grid[y][x] = nearestRegion;
             }
         }
         }

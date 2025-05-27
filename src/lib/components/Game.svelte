@@ -3,7 +3,7 @@
     import { getPixiContext, setPixiContext } from "../pixi";
     import { onMount } from "svelte";
 	import { Board } from "./Board";
-	import { game, GameState, getGameEndTime, getGameId, getGameStartTime, getGameState, getGridSize, getRegions } from "$lib/model";
+	import { game, GameState, getGameAnnotations, getGameEndTime, getGameId, getGameNotifications, getGameStartTime, getGameState, getGridSize, getRegions } from "$lib/model";
 	import { derived } from "svelte/store";
 
     // Local state
@@ -48,9 +48,13 @@
 
             board = new Board(app.stage, containerWidth, containerHeight, $getRegions, $getGridSize);
 
-            const unsub = getGameId.subscribe((id) => {
+            const unsubId = getGameId.subscribe((id) => {
                 app.stage.removeChildren();
                 board = new Board(app.stage, containerWidth, containerHeight, $getRegions, $getGridSize );
+            });
+
+            const unsubAnnotation = getGameAnnotations.subscribe((annotations) => {
+                board.updateAnnotations(annotations);
             });
 
 
@@ -95,7 +99,7 @@
         {:else if !getPixiContext().ready}
            loading...
         {:else}
-           {elapsed}&Tab;s
+           {elapsed} s
         {/if}
     </div>
     

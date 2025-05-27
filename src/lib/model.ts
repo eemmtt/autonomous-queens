@@ -1,5 +1,6 @@
 import { derived, readable, writable } from "svelte/store";
 import { generateSolution, generateRegions } from "./solution";
+import type { Flag } from "./Flag";
 
 export enum GameState{
     "loading",
@@ -16,7 +17,9 @@ interface GameModel{
     endTime: number,
     state: GameState
     placedFlags: number[][],
-    numCurrFlags: number
+    numCurrFlags: number,
+    notifications: string,
+    annotations: number[][],
 }
 
 function createGameStore(){
@@ -36,6 +39,8 @@ function createGameStore(){
         state: GameState.inProgress,
         placedFlags: initPlacedFlags,
         numCurrFlags: 0,
+        notifications: "",
+        annotations: initPlacedFlags.slice(),
     });
 
     return {
@@ -57,6 +62,8 @@ function createGameStore(){
                 state: GameState.inProgress,
                 placedFlags: initPlacedFlags,
                 numCurrFlags: 0,
+                notifications: "",
+                annotations: initPlacedFlags.slice(),
             }
         }),
         updateState: (state: GameState) => update((store) => {
@@ -72,15 +79,16 @@ function createGameStore(){
             let updatedCount = store.numCurrFlags;
             
             //toggle flag
-            if (updatedFlags[flag.x][flag.y] == 1){
-                updatedFlags[flag.x][flag.y] = 0;
+            if (updatedFlags[flag.y][flag.x] == 1){
+                updatedFlags[flag.y][flag.x] = 0;
                 updatedCount -= 1;
                 
             } else {
-                updatedFlags[flag.x][flag.y] = 1;
+                updatedFlags[flag.y][flag.x] = 1;
                 updatedCount += 1;
             }
 
+            /*
             //return if there aren't enough flags to bother checking for a win
             if (updatedCount != gridSize){
                 //console.log("Escape because flagCount ==", updatedCount);
@@ -91,12 +99,14 @@ function createGameStore(){
                     numCurrFlags: updatedCount,
                 }
             }
+            */
 
+            /*
             //check for expected win (placedFlags == solution flags)
             let gameWon = true;
             for (let y = 0; y < store.solution.length; y++) {
-                for (let x = 0; x < store.solution[0].length; x++) {
-                    if (updatedFlags[x][y] != store.solution[x][y]){
+                for (let x = 0; x < store.solution[y].length; x++) {
+                    if (updatedFlags[y][x] != store.solution[y][x]){
                         gameWon = false;
                         break;
                     }
@@ -105,73 +115,119 @@ function createGameStore(){
                     break;
                 }
             }
+            */
 
+            const start = performance.now();
             //check for unexpected win (and log)
-            let gameWonUnexpected = true;
+            let gameWonUnexpected = updatedCount == gridSize ? true : false; //win only possible if gridSize number of flags placed
             const rows = Array(gridSize).fill(0);
             const cols = Array(gridSize).fill(0);
             const regs = Array(gridSize).fill(0);
             const dirs = [{x:-1,y:-1}, {x:0,y:-1}, {x:1,y:-1}, {x:-1,y:0}, {x:1,y:0}, {x:-1,y:1}, {x:0,y:1}, {x:1,y:1}];
+            let notif = "";
+            const updatedAnnotations: number[][] =  Array(gridSize).fill(null).map(() => Array(gridSize).fill(0));
 
-            for (let v = 0; v < updatedFlags.length; v++) {
-                for (let u = 0; u < updatedFlags[0].length; u++) {
-                    //console.log("Start unexpected check: y =", v, ",x =", u);
-                    if (updatedFlags[u][v] == 1){
-                        if (rows[u] != 1){
-                            rows[u] = 1;
+            for (let y = 0; y < updatedFlags.length; y++) {
+                for (let x = 0; x < updatedFlags[y].length; x++) {
+                    //console.log("Start unexpected check: y =", y, ",x =", x);
+                    if (updatedFlags[y][x] == 1){
+                        if (rows[y] != 1){
+                            rows[y] = 1;
                         } else {
-                            gameWonUnexpected = false;
-                            break;
+                            if (!gameWonUnexpected){
+                                //row collision
+                                notif += `2 or more flags in row ${y};`;
+                                const filledRow = Array(gridSize).fill(1);
+                                updatedAnnotations[y] = filledRow.slice();
+                            } else {
+                                gameWonUnexpected = false;
+                                break;    
+                            }
                         }
 
-                        if (cols[v] != 1){
-                            cols[v] = 1;
+                        if (cols[x] != 1){
+                            cols[x] = 1;
                         } else {
-                            gameWonUnexpected = false;
-                            break;
+                            if (!gameWonUnexpected){
+                                //col collision
+                                notif += `2 or more flags in column ${x};`;
+                                updatedAnnotations.forEach((row) => row[x] = 1);
+
+                            } else {
+                                gameWonUnexpected = false;
+                                break;    
+                            }
                         }
 
-                        const flagRegion = store.regions[u][v];
+                        const flagRegion = store.regions[y][x];
                         if (regs[flagRegion] != 1){
                             regs[flagRegion] = 1;
                         } else {
-                            gameWonUnexpected = false;
-                            break;
+                            if (!gameWonUnexpected){
+                                //region collision
+                                notif += `2 or more flags in color region;`;
+                                //fill region in
+                                for (let v = 0; v < store.regions.length; v++) {
+                                    for (let u = 0; u < store.regions[0].length; u++) {
+                                        if (store.regions[v][u] == store.regions[y][x]){
+                                            updatedAnnotations[v][u] = 1;
+                                        }
+                                    }
+                                }
+                            } else {
+                                gameWonUnexpected = false;
+                                break;    
+                            }
                         }
 
                         dirs.forEach((dir) => {
-                            const skip = u+dir.x >= 0 && u+dir.x < gridSize && v+dir.y >= 0 && v+dir.y < gridSize? false: true;
+                            const newX = x + dir.x;
+                            const newY = y + dir.y;
 
-                            if (skip == false && updatedFlags[u+dir.x][v+dir.y] == 1){
-                                //console.log("Flag at ", u, v, "has neighbor at", xClamped, yClamped);
-                                gameWonUnexpected = false;
+                            //check if outside bounds
+                            const skip = newX >= 0 && newX < gridSize && newY >= 0 && newY < gridSize ? false : true;
+
+                            if (skip == false && updatedFlags[newY][newX] == 1){
+                                //console.log("Flag at ", x, y, "has neighbor at", newX, newY);
+                                if (!gameWonUnexpected){
+                                    //adjacent flag
+                                    notif += `flags must not be adjacent;`;
+                                    //fill adjacent in
+                                } else {
+                                    gameWonUnexpected = false; 
+                                }
                             }
                         })
 
                     }
                 }    
-                if (gameWonUnexpected == false) {
+                if (gameWonUnexpected == false && gridSize == updatedCount) {
                     break;
                 }
             }
+            console.log("Checked for win in:", performance.now() - start, "ms");
 
 
-
-            if (gameWon || gameWonUnexpected){
+            //if (gameWon || gameWonUnexpected){
+            if (gameWonUnexpected){
                 const newEndTime = Math.floor((Date.now() - store.startTime) / 1000);
                 return {
                     ...store,
                     endTime: newEndTime,
                     placedFlags: updatedFlags,
                     state: GameState.win,
-                    numCurrFlags: updatedCount
+                    numCurrFlags: updatedCount,
+                    notifications: "",
+                    annotations: [],
                 }
             } else {
                 return {
                     ...store,
                     placedFlags: updatedFlags,
                     state: GameState.inProgress,
-                    numCurrFlags: updatedCount
+                    numCurrFlags: updatedCount,
+                    notifications: notif,
+                    annotations: updatedAnnotations,
                 }
             }
 
@@ -225,4 +281,14 @@ export const getGameStartTime = derived(
 export const getGameEndTime = derived(
     game, 
     $store => $store.endTime
+);
+
+export const getGameNotifications = derived(
+    game, 
+    $store => $store.notifications
+);
+
+export const getGameAnnotations = derived(
+    game, 
+    $store => $store.annotations
 );

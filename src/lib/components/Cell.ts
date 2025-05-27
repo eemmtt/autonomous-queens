@@ -8,6 +8,7 @@ export class Cell{
     parent: Container;
     root: Container;
     ex: Container;
+    warning: Container;
     flag: Container;
     p0: Point;
     p1: Point;
@@ -19,7 +20,7 @@ export class Cell{
     asFlag: Flag;
 
 
-    constructor(pts: Point[], state: number, region: number, parent: Container, flagContainer: Container, indices: {x: number, y: number}){
+    constructor(pts: Point[], state: number, region: number, parent: Container, flagContainer: Container, annotationContainer: Container, indices: {x: number, y: number}){
         [this.p0, this.p1, this.p2, this.p3] = pts;
         this.center = new Point((pts[0].x + pts[1].x + pts[2].x + pts[3].x)/4, (pts[0].y + pts[1].y + pts[2].y + pts[3].y)/4);
         this.state = state;
@@ -76,6 +77,12 @@ export class Cell{
         flagContainer.addChild(this.flag);
 
 
+        this.warning = new Container();
+        scratchLine(this.warning, lerp2d(this.p0, this.p1, 0.5), lerp2d(this.p0, this.p3, 0.5), 10, 0.05, 0xFF4433);
+        scratchLine(this.warning, lerp2d(this.p3, this.p2, 0.5), lerp2d(this.p2, this.p1, 0.5), 10, 0.05, 0xFF4433);
+        scratchLine(this.warning, this.p3, this.p1, 10, 0.075, 0xFF4433);
+        this.warning.visible = false;
+        annotationContainer.addChild(this.warning);
 
         
         //visualize winding

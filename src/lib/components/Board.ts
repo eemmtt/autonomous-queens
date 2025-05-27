@@ -7,6 +7,7 @@ export class Board{
     root: Container;
     bg: Container;
     flags: Container;
+    annotations: Container;
     quadPts: Point[];
     cells: Cell[][];
     trigger: (event: FederatedPointerEvent) => void;
@@ -21,6 +22,7 @@ export class Board{
 
         this.bg = new Container();
         this.flags = new Container();
+        this.annotations = new Container();
 
         const inset = 50;
         const rScale = 20;
@@ -37,13 +39,13 @@ export class Board{
         this.bg.addChild(grid);
 
         const gridPts: Point[][] = this.calcGrid(p0, p1, p2, p3, gridSize, 0.05);
-        this.cells = this.calcCells(gridPts, gridSize, regions, this.bg, this.flags);
+        this.cells = this.calcCells(gridPts, gridSize, regions, this.bg, this.flags, this.annotations);
         
 
         //debugging gridpts
         /*
-        for (let y = 0; y < gridPts[0].length; y++) {
-            for (let x = 0; x < gridPts.length; x++) {
+        for (let y = 0; y < gridPts.length; y++) {
+            for (let x = 0; x < gridPts[y].length; x++) {
                 const dot = new Graphics()
                     .circle(gridPts[y][x].x, gridPts[y][x].y, 3)
                     .fill(0xFF0000)
@@ -54,29 +56,29 @@ export class Board{
         }
         */
         
-        for (let i = 0; i < gridPts[0].length; i++) {
+        for (let i = 0; i < gridPts.length; i++) {
             //draw grid lines with random splits
             
             if (Math.random() < 0.4){
-                this.scratchLine(this.bg, gridPts[0][i], gridPts[gridPts[0].length - 1][i], 5, 0.05, 0x4f3014);
+                this.scratchLine(this.bg, gridPts[i][0], gridPts[i][gridPts[i].length - 1], 5, 0.05, 0x4f3014);
             } else {
-                const split = Math.floor(Math.random() * gridPts.length);
-                this.scratchLine(this.bg, gridPts[0][i], gridPts[split][i], 7, 0.025, 0x4f3014);
-                this.scratchLine(this.bg, gridPts[split][i], gridPts[gridPts[0].length - 1][i], 7, 0.025, 0x4f3014);
+                const split = Math.floor(Math.random() * gridPts[i].length);
+                this.scratchLine(this.bg, gridPts[i][0], gridPts[i][split], 7, 0.025, 0x4f3014);
+                this.scratchLine(this.bg, gridPts[i][split], gridPts[i][gridPts[i].length - 1], 7, 0.025, 0x4f3014);
             }
             
             if (Math.random() < 0.4){
-                this.scratchLine(this.bg, gridPts[0][i], gridPts[gridPts[0].length - 1][i], 5, 0.05, 0x4f3014);
+                this.scratchLine(this.bg, gridPts[0][i], gridPts[gridPts.length - 1][i], 5, 0.05, 0x4f3014);
             } else {
                 const split = Math.floor(Math.random() * gridPts.length);
-                this.scratchLine(this.bg, gridPts[i][0], gridPts[i][split], 7, 0.025, 0x4f3014);
-                this.scratchLine(this.bg, gridPts[i][split], gridPts[i][gridPts[0].length - 1], 7, 0.025, 0x4f3014);
+                this.scratchLine(this.bg, gridPts[0][i], gridPts[split][i], 7, 0.025, 0x4f3014);
+                this.scratchLine(this.bg, gridPts[split][i], gridPts[gridPts.length - 1][i], 7, 0.025, 0x4f3014);
             }
         }
         
 
 
-        this.root.addChild(this.bg, this.flags);
+        this.root.addChild(this.bg, this.annotations, this.flags);
         parent.addChild(this.root);
 
         this.trigger = (event) => this.onClick(event, this.quadPts, this.cells);
@@ -148,28 +150,36 @@ export class Board{
         //jitter is a decimal percentage e.g., 0.05
         const gridPts: Point[][] = [];
 
+        let topPts, botPts, leftPts, rightPts;
         //distribute pts along the edges of the quad
-        const leftPts = this.distribPts(p0, p3, gridSize, jitter);
-        const rightPts = this.distribPts(p1, p2, gridSize, jitter);
-        const topPts = this.distribPts(leftPts[0], rightPts[0], gridSize, jitter);
-        const botPts = this.distribPts(leftPts[leftPts.length - 1], rightPts[rightPts.length - 1], gridSize, jitter);
+        topPts = this.distribPts(p0, p1, gridSize, jitter);
+        botPts = this.distribPts(p3, p2, gridSize, jitter);
+        leftPts = this.distribPts(topPts[0], botPts[0], gridSize, jitter);
+        rightPts = this.distribPts(topPts[topPts.length - 1], botPts[botPts.length - 1], gridSize, jitter);
+        /*
+        leftPts = this.distribPts(p0, p3, gridSize, jitter);
+        rightPts = this.distribPts(p1, p2, gridSize, jitter);
+        topPts = this.distribPts(leftPts[0], rightPts[0], gridSize, jitter);
+        botPts = this.distribPts(leftPts[leftPts.length - 1], rightPts[rightPts.length - 1], gridSize, jitter);
+        */
+    
 
         //interpolate between the edge pts to define grid vertices
-        gridPts.push(leftPts);
-        for (let x = 1; x < topPts.length - 1; x++) {
+        gridPts.push(topPts);
+        for (let y = 1; y < leftPts.length - 1; y++) {
             const newPts: Point[] = [];
-            for (let y = 0; y < leftPts.length; y++) {
-                if (y == 0){
-                    newPts.push(topPts[x]);
-                } else if (y == leftPts.length - 1){
-                    newPts.push(botPts[x]);
+            for (let x = 0; x < topPts.length; x++) {
+                if (x == 0){
+                    newPts.push(leftPts[y]);
+                } else if (x == topPts.length - 1){
+                    newPts.push(rightPts[y]);
                 } else {
                     newPts.push(this.lineIntersection(leftPts[y].x, leftPts[y].y, rightPts[y].x, rightPts[y].y, topPts[x].x, topPts[x].y, botPts[x].x, botPts[x].y));
                 }
             }
             gridPts.push(newPts);
         }
-        gridPts.push(rightPts);
+        gridPts.push(botPts);
         return gridPts;
     }
 
@@ -187,20 +197,20 @@ export class Board{
         return newPts;
     }
 
-    calcCells(pts: Point[][], gridSize: number, regions: number[][], parent: Container, flagContainer: Container): Cell[][]{
+    calcCells(pts: Point[][], gridSize: number, regions: number[][], parent: Container, flagContainer: Container, annotationContainer: Container): Cell[][]{
         const cells: Cell[][] = [];
 
         //pts.length will always be gridSize + 1
-        for (let i = 0; i < gridSize; i++) {
+        for (let y = 0; y < gridSize; y++) {
             const newCells: Cell[] = [];
-            for (let j = 0; j < gridSize; j++) {
+            for (let x = 0; x < gridSize; x++) {
                 const qPts: Point[] = [
-                    pts[j][i],     // current
-                    pts[j+1][i],   // right
-                    pts[j+1][i+1], // right-down
-                    pts[j][i+1]    // down
+                    pts[y][x],     // current
+                    pts[y][x+1],   // right
+                    pts[y+1][x+1], // right-down
+                    pts[y+1][x]    // down
                 ];
-                newCells.push( new Cell(qPts, 0, regions[j][i], parent, flagContainer, {x: j, y: i}));
+                newCells.push( new Cell(qPts, 0, regions[y][x], parent, flagContainer, annotationContainer, {x: x, y: y}));
             }
             cells.push(newCells);
         }
@@ -247,12 +257,12 @@ export class Board{
         }
 
         //estimate cell based on quad limits
-        const xIndex = Math.floor(((event.globalX - xMin) / (xMax - xMin)) * cells.length);
-        const yIndex = Math.floor(((event.globalY - yMin) / (yMax - yMin)) * cells[0].length);
+        const xIndex = Math.floor(((event.globalX - xMin) / (xMax - xMin)) * cells[0].length);
+        const yIndex = Math.floor(((event.globalY - yMin) / (yMax - yMin)) * cells.length);
 
-        const testCell = cells[yIndex][xIndex];
+        const testCell = cells[yIndex][xIndex]; //not sure why this works when reversed...??
         const initTest = this.insideQuad(event.global, testCell);
-        //console.log(initTest.dirs, [xIndex, yIndex]);
+        //console.log(initTest.dirs, [yIndex, xIndex], cells[yIndex][xIndex].asFlag);
         if (initTest.result == true){
             testCell.update();
         } else {
@@ -265,7 +275,7 @@ export class Board{
                 }
                 return;
             }
-            if (initTest.dirs.east < 0 && xIndex + 1 < cells.length){
+            if (initTest.dirs.east < 0 && xIndex + 1 < cells[0].length){
                 const eastCell = cells[yIndex][xIndex + 1];
                 const eTest = this.insideQuad(event.global, eastCell);
                 if (eTest.result == true){
@@ -273,7 +283,7 @@ export class Board{
                 }
                 return;
             }
-            if (initTest.dirs.south < 0 && yIndex + 1 < cells[0].length){
+            if (initTest.dirs.south < 0 && yIndex + 1 < cells.length){
                 const southCell = cells[yIndex + 1][xIndex];
                 const sTest = this.insideQuad(event.global, southCell);
                 if (sTest.result == true){
@@ -294,6 +304,19 @@ export class Board{
 
         }
 
+    }
+
+    updateAnnotations(annotations: number[][]){
+        //loop over annotations array and update warnings on cell if anno[y][x] == 1
+        for (let y = 0; y < annotations.length; y++) {
+            for (let x = 0; x < annotations[y].length; x++) {
+                this.cells[y][x].warning.visible = false;
+                //console.log(annotations[y][x]);
+                if (annotations[y][x] == 1){
+                    this.cells[y][x].warning.visible = true;
+                }                
+            }            
+        }
     }
 
 }
