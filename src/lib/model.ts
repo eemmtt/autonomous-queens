@@ -1,5 +1,5 @@
-import { derived, writable } from "svelte/store";
-import { generateSolution, generateRegions, type SolutionDescription, type Flag } from "./solution";
+import { derived, readable, writable } from "svelte/store";
+import { generateSolution, generateRegions } from "./solution";
 
 export enum GameState{
     "loading",
@@ -8,10 +8,12 @@ export enum GameState{
 }
 
 interface GameModel{
+    id: number,
     gridSize: number,
     solution: number[][],
     regions: number[][],
     startTime: number,
+    endTime: number,
     state: GameState
     placedFlags: number[][],
     numCurrFlags: number
@@ -25,10 +27,12 @@ function createGameStore(){
 
 
     const { subscribe, set, update } = writable<GameModel>({
+        id: Date.now(),
         gridSize: gridSize,
         solution: solutionDesc.solution,
         regions: regions,
         startTime: Date.now(),
+        endTime: -1,
         state: GameState.inProgress,
         placedFlags: initPlacedFlags,
         numCurrFlags: 0,
@@ -44,10 +48,12 @@ function createGameStore(){
             
             return {
                 ...store,
+                id: Date.now(),
                 gridSize: gridSize,
                 solution: newSolutionDesc.solution,
                 regions: newRegions,
                 startTime: Date.now(),
+                endTime: -1,
                 state: GameState.inProgress,
                 placedFlags: initPlacedFlags,
                 numCurrFlags: 0,
@@ -152,8 +158,10 @@ function createGameStore(){
 
 
             if (gameWon || gameWonUnexpected){
+                const newEndTime = Math.floor((Date.now() - store.startTime) / 1000);
                 return {
                     ...store,
+                    endTime: newEndTime,
                     placedFlags: updatedFlags,
                     state: GameState.win,
                     numCurrFlags: updatedCount
@@ -174,6 +182,16 @@ function createGameStore(){
 
 export const game = createGameStore();
 
+export const currTime = readable(Date.now(), function start(set) {
+	const interval = setInterval(() => {
+		set(Date.now());
+	}, 100);
+
+	return function stop() {
+		clearInterval(interval);
+	};
+});
+
 export const getGridSize = derived(
     game, 
     $store => $store.gridSize
@@ -192,4 +210,19 @@ export const getGameState = derived(
 export const getSolution = derived(
     game, 
     $store => $store.solution
+);
+
+export const getGameId = derived(
+    game, 
+    $store => $store.id
+);
+
+export const getGameStartTime = derived(
+    game, 
+    $store => $store.startTime
+);
+
+export const getGameEndTime = derived(
+    game, 
+    $store => $store.endTime
 );

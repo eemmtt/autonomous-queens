@@ -19,7 +19,7 @@ function randomNonAdjacentArray(n: number) {
         [...odds.sort(() => Math.random() - 0.5), ...evens.sort(() => Math.random() - 0.5)]
     ;
 
-    console.log("randomNonAdjacentArray in", performance.now() - start, "ms");
+    //console.log("randomNonAdjacentArray in", performance.now() - start, "ms");
     return result;
 }
 
@@ -57,10 +57,10 @@ export function generateSolution(gridSize:number): SolutionDescription {
         newArr[ele] = 1;
         solution.push(newArr);
         flags.push( new Flag(i, ele, regionMap[i]));
-        console.log(newArr);
+        //console.log(newArr);
     });
 
-    console.log("generateSolution in", performance.now() - start, "ms");
+    //console.log("generateSolution in", performance.now() - start, "ms");
 
     return {
         gridSize: gridSize,
@@ -178,7 +178,7 @@ export function generateRegions(desc: SolutionDescription): number[][] {
         }
     }
 
-    console.log("generateRegions in", performance.now() - start, "ms");
+    //console.log("generateRegions in", performance.now() - start, "ms");
 
 
     return grid;

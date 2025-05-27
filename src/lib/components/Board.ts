@@ -81,7 +81,7 @@ export class Board{
 
         this.trigger = (event) => this.onClick(event, this.quadPts, this.cells);
         this.root.on('pointerdown', this.trigger);
-        console.log("Board constructor in", performance.now() - start, "ms");
+        //console.log("Board constructor in", performance.now() - start, "ms");
 
     }
 
