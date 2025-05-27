@@ -134,50 +134,44 @@ function createGameStore(){
                         if (rows[y] != 1){
                             rows[y] = 1;
                         } else {
-                            if (!gameWonUnexpected){
-                                //row collision
-                                notif += `2 or more flags in row ${y};`;
-                                const filledRow = Array(gridSize).fill(1);
-                                updatedAnnotations[y] = filledRow.slice();
-                            } else {
-                                gameWonUnexpected = false;
-                                break;    
-                            }
+                            //row collision
+                            notif += `2 or more flags in row ${y};`;
+                            const filledRow = Array(gridSize).fill(1);
+                            updatedAnnotations[y] = filledRow.slice();
+
+                            gameWonUnexpected = false;
+                            
                         }
 
                         if (cols[x] != 1){
                             cols[x] = 1;
                         } else {
-                            if (!gameWonUnexpected){
-                                //col collision
-                                notif += `2 or more flags in column ${x};`;
-                                updatedAnnotations.forEach((row) => row[x] = 1);
+                            //col collision
+                            console.log("column collision?");
+                            notif += `2 or more flags in column ${x};`;
+                            updatedAnnotations.forEach((row) => row[x] = 1);
 
-                            } else {
-                                gameWonUnexpected = false;
-                                break;    
-                            }
+                            gameWonUnexpected = false;
+
                         }
 
                         const flagRegion = store.regions[y][x];
                         if (regs[flagRegion] != 1){
                             regs[flagRegion] = 1;
                         } else {
-                            if (!gameWonUnexpected){
-                                //region collision
-                                notif += `2 or more flags in color region;`;
-                                //fill region in
-                                for (let v = 0; v < store.regions.length; v++) {
-                                    for (let u = 0; u < store.regions[0].length; u++) {
-                                        if (store.regions[v][u] == store.regions[y][x]){
-                                            updatedAnnotations[v][u] = 1;
-                                        }
+                            //region collision
+                            notif += `2 or more flags in color region;`;
+                            //fill region in
+                            for (let v = 0; v < store.regions.length; v++) {
+                                for (let u = 0; u < store.regions[0].length; u++) {
+                                    if (store.regions[v][u] == store.regions[y][x]){
+                                        updatedAnnotations[v][u] = 1;
                                     }
                                 }
-                            } else {
-                                gameWonUnexpected = false;
-                                break;    
                             }
+
+                            gameWonUnexpected = false;
+
                         }
 
                         dirs.forEach((dir) => {
@@ -189,21 +183,27 @@ function createGameStore(){
 
                             if (skip == false && updatedFlags[newY][newX] == 1){
                                 //console.log("Flag at ", x, y, "has neighbor at", newX, newY);
-                                if (!gameWonUnexpected){
-                                    //adjacent flag
-                                    notif += `flags must not be adjacent;`;
-                                    //fill adjacent in
-                                } else {
-                                    gameWonUnexpected = false; 
-                                }
+                                //adjacent flag
+                                notif += `flags must not be adjacent;`;
+                                //fill adjacent in, nasty style
+                                dirs.forEach((dir) => {
+                                    const newX = x + dir.x;
+                                    const newY = y + dir.y;
+
+                                    //check if outside bounds
+                                    const skip = newX >= 0 && newX < gridSize && newY >= 0 && newY < gridSize ? false : true;
+                                    if (skip == false){
+                                        updatedAnnotations[newY][newX] = 1;
+                                    }
+                                })
+
+                                gameWonUnexpected = false;
+
                             }
                         })
 
                     }
                 }    
-                if (gameWonUnexpected == false && gridSize == updatedCount) {
-                    break;
-                }
             }
             console.log("Checked for win in:", performance.now() - start, "ms");
 
@@ -218,7 +218,7 @@ function createGameStore(){
                     state: GameState.win,
                     numCurrFlags: updatedCount,
                     notifications: "",
-                    annotations: [],
+                    annotations: Array(gridSize).fill(null).map(() => Array(gridSize).fill(0)),
                 }
             } else {
                 return {
